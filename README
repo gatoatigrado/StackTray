@@ -8,6 +8,9 @@ Only tested on Debian Unstable
 
 How to run
 ----------
+edit lib/settings.py. Grab your user ID by clicking on your username in StackOverflow; the URL should be something like
+http://stackoverflow.com/users/81636/gatoatigrado
+
 chmod +x stacktray.py
 ./stacktray.py
 

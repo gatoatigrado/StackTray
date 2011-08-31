@@ -1,4 +1,5 @@
 # your SO id #
-id = 40906
+id = 81636
 # refresh time in minutes
-refresh = 10
+# will not display alerts if nothing changes, so usually not a problem to set it low
+refresh = 1

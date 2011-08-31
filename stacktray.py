@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/env python
 
 from lib.systemtray import SystemTray
 from PyQt4.QtGui import *
