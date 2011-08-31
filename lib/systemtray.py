@@ -1,9 +1,12 @@
+from __future__ import print_function
+
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 import stackexchange
 so = stackexchange.Site(stackexchange.StackOverflow, cache=0)
 
+import urllib2
 import os
 import webbrowser
 import time
@@ -37,10 +40,10 @@ class SystemTray(QSystemTrayIcon):
         self.oldanswers = None
         self.id = settings.id
 
-        self.refresh = settings.refresh * 1000 * 10
+        self.refresh = settings.refresh * 1000 * 60
 
         self.show()
-        self.fetch()
+        self.update()
 
         self.timer = QTimer()
         QObject.connect(self.timer, SIGNAL("timeout()"), self.fetch)
@@ -64,10 +67,19 @@ class SystemTray(QSystemTrayIcon):
         """ The real "work" """
         print("update / run method")
 
+        err = data.get("error")
         try: rep = data["reputation"]
         except KeyError: rep = -1
         try: questions = data["questions"]
         except KeyError: questions = []
+
+        if err:
+            print("error updating")
+            err_msg = "ERROR UPDATING\n" + str(err)
+            self.setToolTip(err_msg)
+            if data["manual"]:
+                self.showMessage("StackTray Message", err_msg, msecs=3000)
+            return
 
         def abbrev(string):
             if len(string) < 50: return string
@@ -120,16 +132,21 @@ class Worker(QThread):
         self.wait()
 
     def getData(self, settings, data):
-        self.user = so.user(settings.id)
+        self.settings = settings
         self.data = data
         self.start()
 
     def run(self):
-        self.user.fetch()
-        questions = self.user.questions.fetch()[:3]
-        for q in questions:
-            q.fetch()
-        self.data.update({"reputation": int(self.user.reputation),
-                     "questions": questions })
-        self.emit(SIGNAL("data"), self.data)
+        try:
+            user = so.user(self.settings.id)
+            user.fetch()
+            questions = user.questions.fetch()[:3]
+            for q in questions:
+                q.fetch()
+            self.data.update({"reputation": int(user.reputation),
+                         "questions": questions })
+            self.emit(SIGNAL("data"), self.data)
+        except urllib2.HTTPError, e:
+            self.data.update({ "error": e })
+            self.emit(SIGNAL("data"), self.data)
 
